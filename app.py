@@ -36,23 +36,24 @@ def ask():
         "repetition_penalty": 1.1
     }
 
-    try:
+       try:
         response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
         result = response.json()
 
-        # 🔍 DEBUG PRINT — check full response in Render logs
+        # 🔍 Print full response in logs
         print("DeepSeek raw response:", result)
 
-        if "output" in result:
-            answer = result["output"]
+        # ✅ FIX: Extract answer from choices[0].text
+        if "choices" in result and len(result["choices"]) > 0:
+            answer = result["choices"][0]["text"].strip()
         else:
             answer = "Sorry, the model didn’t return a proper response."
 
         return jsonify({
             "text_response": answer,
-            "audio_url": ""  # TTS will be added next
+            "audio_url": ""
         })
 
     except Exception as e:
         print("Exception:", str(e))
-        return jsonify({"error": "Server error occurre
+        return jsonify({"error": "Server error occurred."}), 500
