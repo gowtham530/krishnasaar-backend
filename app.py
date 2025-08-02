@@ -1,15 +1,14 @@
 from flask import Flask, request, jsonify
 import requests
-import os
 
 app = Flask(__name__)
 
-# Replace this with your actual Together AI key
+# ✅ Your Together AI key goes here
 TOGETHER_API_KEY = "tgp_v1_2pRyRXB_U7Dcow3nzf4ghmdZu8zGyZrhxF7SaQxxh3U"
 
-# DeepSeek model endpoint and parameters
-TOGETHER_API_URL = "https://api.together.xyz/v1/chat/completions"
-TOGETHER_MODEL = "deepseek-chat"
+# ✅ Correct API and model for DeepSeek
+TOGETHER_API_URL = "https://api.together.xyz/inference"
+TOGETHER_MODEL = "deepseek-ai/deepseek-chat"  # or use deepseek-coder-6.7b-instruct
 
 @app.route("/")
 def home():
@@ -30,25 +29,29 @@ def ask():
 
     payload = {
         "model": TOGETHER_MODEL,
-        "messages": [
-            {"role": "system", "content": "You are Lord Krishna explaining answers from the Mahabharata in a wise and kind way."},
-            {"role": "user", "content": user_question}
-        ],
-        "temperature": 0.7
+        "prompt": f"User: {user_question}\nAssistant:",
+        "max_tokens": 512,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "repetition_penalty": 1.1
     }
 
     try:
         response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
-        response.raise_for_status()
         result = response.json()
 
-        # Extract reply from DeepSeek
-        answer = result["choices"][0]["message"]["content"]
+        # Check if output exists
+        if "output" in result:
+            answer = result["output"]
+        else:
+            print("DeepSeek error response:", result)
+            answer = "Sorry, the model didn’t return a proper response."
 
         return jsonify({
             "text_response": answer,
-            "audio_url": ""  # We will fill this later with voice output
+            "audio_url": ""  # TTS will be added later
         })
 
-    except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        print("Exception:", str(e))
+        return jsonify({"error": "Server error occurred."}), 500
