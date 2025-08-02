@@ -3,16 +3,16 @@ import requests
 
 app = Flask(__name__)
 
-# ✅ Replace with your actual Together API key
+# ✅ Your Together API key here
 TOGETHER_API_KEY = "tgp_v1_2pRyRXB_U7Dcow3nzf4ghmdZu8zGyZrhxF7SaQxxh3U"
 
-# ✅ Working Together AI setup
+# ✅ Correct Together.ai API
 TOGETHER_API_URL = "https://api.together.xyz/inference"
-TOGETHER_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"  # Confirmed working
+TOGETHER_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 
 @app.route("/")
 def home():
-    return "Welcome to KrishnaSaar Chatbot API (powered by Mistral on Together.ai)"
+    return "Welcome to KrishnaSaar Chatbot API (Powered by Mistral on Together.ai)"
 
 @app.route("/ask", methods=["POST"])
 def ask():
@@ -29,21 +29,21 @@ def ask():
 
     payload = {
         "model": TOGETHER_MODEL,
-        "prompt": f"User: {user_question}\nAssistant:",
+        "prompt": f"[INST] {user_question} [/INST]",
         "max_tokens": 512,
         "temperature": 0.7,
         "top_p": 0.9,
         "repetition_penalty": 1.1
     }
 
-       try:
+    try:
         response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
         result = response.json()
 
-        # 🔍 Print full response in logs
+        # Debugging help — shows full API result in Render logs
         print("DeepSeek raw response:", result)
 
-        # ✅ FIX: Extract answer from choices[0].text
+        # ✅ Safe and correct format for Mistral model
         if "choices" in result and len(result["choices"]) > 0:
             answer = result["choices"][0]["text"].strip()
         else:
