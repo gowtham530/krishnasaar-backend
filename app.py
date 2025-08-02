@@ -18,10 +18,29 @@ def home():
 def ask():
     data = request.get_json()
     user_question = data.get("question", "")
+    user_lang = data.get("lang", "en")  # "en", "hi", "te"
 
     if not user_question:
         return jsonify({"error": "No question provided."}), 400
 
+    # Step 1: Translate input to English if needed
+    def translate_to_english(text, source_lang):
+        if source_lang == "en":
+            return text
+        try:
+            response = requests.post("https://libretranslate.com/translate", json={
+                "q": text,
+                "source": source_lang,
+                "target": "en",
+                "format": "text"
+            })
+            return response.json()["translatedText"]
+        except:
+            return text
+
+    translated_question = translate_to_english(user_question, user_lang)
+
+    # Step 2: Send to Together AI
     headers = {
         "Authorization": f"Bearer {TOGETHER_API_KEY}",
         "Content-Type": "application/json"
@@ -29,7 +48,7 @@ def ask():
 
     payload = {
         "model": TOGETHER_MODEL,
-        "prompt": f"[INST] {user_question} [/INST]",
+        "prompt": f"[INST] {translated_question} [/INST]",
         "max_tokens": 512,
         "temperature": 0.7,
         "top_p": 0.9,
@@ -39,19 +58,34 @@ def ask():
     try:
         response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
         result = response.json()
+        print("Mistral response:", result)
 
-        # Debugging help — shows full API result in Render logs
-        print("DeepSeek raw response:", result)
-
-        # ✅ Safe and correct format for Mistral model
         if "choices" in result and len(result["choices"]) > 0:
-            answer = result["choices"][0]["text"].strip()
+            english_answer = result["choices"][0]["text"].strip()
         else:
-            answer = "Sorry, the model didn’t return a proper response."
+            english_answer = "Sorry, the model didn’t return a proper response."
+
+        # Step 3: Translate back to user language
+        def translate_from_english(text, target_lang):
+            if target_lang == "en":
+                return text
+            try:
+                response = requests.post("https://libretranslate.com/translate", json={
+                    "q": text,
+                    "source": "en",
+                    "target": target_lang,
+                    "format": "text"
+                })
+                return response.json()["translatedText"]
+            except:
+                return text
+
+        translated_answer = translate_from_english(english_answer, user_lang)
 
         return jsonify({
-            "text_response": answer,
-            "audio_url": ""
+            "text_response": translated_answer,
+            "english_reference": english_answer,
+            "audio_url": ""  # Voice output next
         })
 
     except Exception as e:
