@@ -3,16 +3,16 @@ import requests
 
 app = Flask(__name__)
 
-# ✅ Your Together AI key goes here
+# ✅ Replace with your actual Together API key
 TOGETHER_API_KEY = "tgp_v1_2pRyRXB_U7Dcow3nzf4ghmdZu8zGyZrhxF7SaQxxh3U"
 
-# ✅ Correct API and model for DeepSeek
+# ✅ Working Together AI setup
 TOGETHER_API_URL = "https://api.together.xyz/inference"
-TOGETHER_MODEL = "deepseek-ai/deepseek-chat"  # or use deepseek-coder-6.7b-instruct
+TOGETHER_MODEL = "mistralai/Mixtral-8x7B-Instruct-v0.1"  # Confirmed working
 
 @app.route("/")
 def home():
-    return "Welcome to KrishnaSaar Chatbot API with DeepSeek!"
+    return "Welcome to KrishnaSaar Chatbot API (powered by Mistral on Together.ai)"
 
 @app.route("/ask", methods=["POST"])
 def ask():
@@ -40,18 +40,19 @@ def ask():
         response = requests.post(TOGETHER_API_URL, headers=headers, json=payload)
         result = response.json()
 
-        # Check if output exists
+        # 🔍 DEBUG PRINT — check full response in Render logs
+        print("DeepSeek raw response:", result)
+
         if "output" in result:
             answer = result["output"]
         else:
-            print("DeepSeek error response:", result)
             answer = "Sorry, the model didn’t return a proper response."
 
         return jsonify({
             "text_response": answer,
-            "audio_url": ""  # TTS will be added later
+            "audio_url": ""  # TTS will be added next
         })
 
     except Exception as e:
         print("Exception:", str(e))
-        return jsonify({"error": "Server error occurred."}), 500
+        return jsonify({"error": "Server error occurre
